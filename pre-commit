@@ -1,1 +1,83 @@
-/usr/share/git-core/templates/hooks/pre-commit
+#!/bin/bash
+
+# Check PHP file $1 syntax and exit with exit code 1 if there are any
+test_php_file_syntax() {
+    if [[ "$1" =~ .(php|inc)$ ]] && ! php -l "$1" > /dev/null;
+    then
+        echo
+        echo -e "\e[31mPHP syntax checker failed\e[0m"
+        echo
+        echo -e "\tFile: \e[34m$1\e[0m"
+        echo -e "\tReason:"
+        echo
+        php -l "$1" | sed "s/^/\t/"
+        echo
+        exit 1
+    fi
+}
+
+# Check file $1 for words $2 and exit with exit status 1 if found
+test_words_existance() {
+    if git diff --cached -U0 "$1" | grep -P '^[+-]' | grep -Ev '^(--- a/|\+\+\+ b/|-)' | grep -q "$2"
+    then
+        echo
+        echo -e "\e[31mWords checker failed\e[0m"
+        echo
+        echo -e "\tFile: \e[34m$1\e[0m"
+        echo -e "\tReason: has word \e[96m$2\e[0m in newly written code."
+        git diff --cached -U0 "$1" | grep -P '^[+-]' | grep -Ev '^(--- a/|\+\+\+ b/|-)' | grep "$2" | sed "s/^/\t/" | cut -c 1-100
+        echo
+        exit 1
+    fi
+}
+
+while read st file
+do
+    # skip deleted files
+    if [ "$st" == 'D' ]
+    then
+        continue
+    fi
+
+    # Generic
+    test_words_existance "$file" TODO || ERRORS=1
+    test_words_existance "$file" FIXME || ERRORS=1
+    test_words_existance "$file" XXX || ERRORS=1
+
+    # PHP
+    test_php_file_syntax "$file"
+    test_words_existance "$file" var_dump || ERRORS=1
+    test_words_existance "$file" print_r || ERRORS=1
+    test_words_existance "$file" error_reporting || ERRORS=1
+    test_words_existance "$file" debug_backtrace || ERRORS=1
+    test_words_existance "$file" exit || ERRORS=2
+    test_words_existance "$file" die || ERRORS=2
+
+    # Mysql
+    test_words_existance "$file" TRUNCATE || ERRORS=2
+    test_words_existance "$file" DELETE || ERRORS=2
+
+    # JavaScript
+    test_words_existance "$file" console.log || ERRORS=1
+    test_words_existance "$file" debugger || ERRORS=1
+
+    # Python
+    test_words_existance "$file" set_trace || ERRORS=1
+    test_words_existance "$file" print || ERRORS=1
+    test_words_existance "$file" pprint || ERRORS=1
+    test_words_existance "$file" __dict__ || ERRORS=1
+
+    # Ruby
+    test_words_existance "$file" abort || ERRORS=1
+    test_words_existance "$file" debug || ERRORS=2
+    test_words_existance "$file" inspect || ERRORS=1
+
+done < <(git diff --cached --name-status)
+
+# Block commit only if it's error code 1 - other codes means that error
+# is not a fatal and commit can continue. In both cases user will see 
+# error messages.
+if [[ $ERRORS == 1 ]]
+then
+    exit 1
+fi
