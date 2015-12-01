@@ -1,17 +1,11 @@
 #!/bin/bash
 
-# clean git default stuff
-echo > "$1"
-
-# if it's merge commit - write default message
-if [ "$2" == "merge" ]
-then
-    echo "Code merge" > "$1"
-fi
-
 # if it contains some number in branch name - use it as ticket ID
 TICKET=$(git symbolic-ref HEAD | sed 's/[^0-9]*//')
 if [ -n "$TICKET" ]
 then
+    mv "$1" "$1.bak"
     echo "#$TICKET " > "$1"
+    cat "$1.bak" >> "$1"
+    rm -f "$1.bak"
 fi
