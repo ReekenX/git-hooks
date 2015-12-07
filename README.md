@@ -18,6 +18,15 @@ For other languages (Python, Ruby, PHP, JavaScript, Mysql) it will check common 
 adding other languages there to make it better and might rewrite it a bit to make module support. Feel
 free to fork this repo and adding stuff!
 
+# commit-msg
+
+This hook is called after commit message is saved.
+
+It checks first line to contain ticket number (format: #12345 SOME TEXT). It will be enabled once you
+enable config for it with `git config hooks.ticketnumbercheck on`.
+
+To deactivate remove hook or set `git config hooks.ticketnumbercheck off`.
+
 # References
 
 For PHP projects I had similar repo: https://github.com/ReekenX/phpcheck-git

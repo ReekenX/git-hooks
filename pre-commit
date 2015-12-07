@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Check PHP file $1 syntax and exit with exit code 1 if there are any
+# Check PHP file $1 syntax and exit with exit code 1 if there are any errors
 test_php_file_syntax() {
     if [[ "$1" =~ .(php|inc)$ ]] && ! php -l "$1" > /dev/null;
     then
@@ -16,7 +16,7 @@ test_php_file_syntax() {
     fi
 }
 
-# Check file $1 for words $2 and exit with exit status 1 if found
+# Check file $1 for words $2
 test_words_existance() {
     if git diff --cached -U0 "$1" | grep -P '^[+-]' | grep -Ev '^(--- a/|\+\+\+ b/|-)' | grep -q "$2"
     then
@@ -27,7 +27,6 @@ test_words_existance() {
         echo -e "\tReason: has word \e[96m$2\e[0m in newly written code."
         git diff --cached -U0 "$1" | grep -P '^[+-]' | grep -Ev '^(--- a/|\+\+\+ b/|-)' | grep "$2" | sed "s/^/\t/" | cut -c 1-100
         echo
-        exit 1
     fi
 }
 
@@ -40,44 +39,41 @@ do
     fi
 
     # Generic
-    test_words_existance "$file" TODO || ERRORS=1
-    test_words_existance "$file" FIXME || ERRORS=1
-    test_words_existance "$file" XXX || ERRORS=1
+    test_words_existance "$file" TODO
+    test_words_existance "$file" FIXME
+    test_words_existance "$file" XXX
 
     # PHP
     test_php_file_syntax "$file"
-    test_words_existance "$file" var_dump || ERRORS=1
-    test_words_existance "$file" print_r || ERRORS=1
-    test_words_existance "$file" error_reporting || ERRORS=1
-    test_words_existance "$file" debug_backtrace || ERRORS=1
-    test_words_existance "$file" exit || ERRORS=2
-    test_words_existance "$file" die || ERRORS=2
+    test_words_existance "$file" var_dump
+    test_words_existance "$file" print_r
+    test_words_existance "$file" error_reporting
+    test_words_existance "$file" debug_backtrace
+    test_words_existance "$file" exit
+    test_words_existance "$file" die
 
     # Mysql
-    test_words_existance "$file" TRUNCATE || ERRORS=2
-    test_words_existance "$file" DELETE || ERRORS=2
+    test_words_existance "$file" TRUNCATE
+    test_words_existance "$file" DELETE
 
     # JavaScript
-    test_words_existance "$file" console.log || ERRORS=1
-    test_words_existance "$file" debugger || ERRORS=1
+    test_words_existance "$file" console.log
+    test_words_existance "$file" debugger
 
     # Python
-    test_words_existance "$file" set_trace || ERRORS=1
-    test_words_existance "$file" print || ERRORS=1
-    test_words_existance "$file" pprint || ERRORS=1
-    test_words_existance "$file" __dict__ || ERRORS=1
+    test_words_existance "$file" set_trace
+    test_words_existance "$file" print
+    test_words_existance "$file" pprint
+    test_words_existance "$file" __dict__
 
     # Ruby
-    test_words_existance "$file" abort || ERRORS=1
-    test_words_existance "$file" debug || ERRORS=2
-    test_words_existance "$file" inspect || ERRORS=1
+    test_words_existance "$file" abort
+    test_words_existance "$file" debug
+    test_words_existance "$file" inspect
 
 done < <(git diff --cached --name-status)
 
-# Block commit only if it's error code 1 - other codes means that error
-# is not a fatal and commit can continue. In both cases user will see 
-# error messages.
-if [[ $ERRORS == 1 ]]
-then
-    exit 1
-fi
+# NOTE: Why we are not using `exit 1-255` on error? Well, in practice
+# you would see that it's way too buggy to trust. Way too many times
+# you are forced to use `git commit -n` to run commit without hooks,
+# so errors are just printed out for the user.
