@@ -18,14 +18,14 @@ test_php_file_syntax() {
 
 # Check file $1 for words $2
 test_words_existance() {
-    if git diff --cached -U0 "$1" | grep -P '^[+-]' | grep -Ev '^(--- a/|\+\+\+ b/|-)' | grep -q "$2"
+    if git diff --cached -U0 "$1" | grep -P '^\+' | grep -q "$2"
     then
         echo
         echo -e "\e[31mWords checker failed\e[0m"
         echo
         echo -e "\tFile: \e[34m$1\e[0m"
         echo -e "\tReason: has word \e[96m$2\e[0m in newly written code."
-        git diff --cached -U0 "$1" | grep -P '^[+-]' | grep -Ev '^(--- a/|\+\+\+ b/|-)' | grep "$2" | sed "s/^/\t/" | cut -c 1-100
+        git diff --cached -U0 "$1" | grep -P '^\+' | grep "$2" | sed "s/^/\t/" | cut -c 1-100
         echo
     fi
 }
