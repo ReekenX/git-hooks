@@ -5,6 +5,7 @@ then
     if head -n 1 "$1" | grep -Pvq "^#[0-9]+"
     then
         echo >&2 "ERROR: Ticket number is missing in commit message"
+        cp "$1" /tmp/.git-rejected-commit-msg
         exit 1
     fi
 fi
