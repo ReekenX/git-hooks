@@ -8,25 +8,50 @@ test_php_file_syntax() {
         echo -e "\e[31mPHP syntax checker failed\e[0m"
         echo
         echo -e "\tFile: \e[34m$1\e[0m"
-        echo -e "\tReason:"
         echo
-        php -l "$1" | sed "s/^/\t/"
+        echo -e "\tReason:"
+        php -l "$1" | sed "s/^/\t\t/"
         echo
         exit 1
     fi
 }
 
+# Check for newly introduced PSR issues
+test_php_psr() {
+    if [[ "$1" =~ .(php|inc)$ ]]
+    then
+        git show HEAD:"$1" > /tmp/.test_file.php
+        errors_before=$(phpcs /tmp/.test_file.php | wc -l)
+        errors_after=$(phpcs "$1" | wc -l)
+        if [[ $errors_after -gt $errors_before ]] 
+        then
+            echo
+            echo -e "\e[31mPSR checker failed\e[0m"
+            echo
+            echo -e "\tFile: \e[34m$1\e[0m"
+            echo -e "\tReason: you have introduced $(($errors_after-$errors_before)) new PSR problems"
+            echo
+            exit 1
+        fi
+    fi
+}
+
 # Check file $1 for words $2
 test_words_existance() {
-    if git diff --cached -U0 "$1" | grep -P '^\+' | grep -q "$2"
+    if git diff --cached -U0 "$1" | grep -P '^[+-]' | grep -Ev '^(--- a/|\+\+\+ b/|-)' | grep -q "$2"
     then
         echo
         echo -e "\e[31mWords checker failed\e[0m"
         echo
         echo -e "\tFile: \e[34m$1\e[0m"
         echo -e "\tReason: has word \e[96m$2\e[0m in newly written code."
-        git diff --cached -U0 "$1" | grep -P '^\+' | grep "$2" | sed "s/^/\t/" | cut -c 1-100
         echo
+        git diff --cached -U0 "$1" | grep -P '^[+-]' | grep -Ev '^(--- a/|\+\+\+ b/|-)' | grep "$2" | sed "s/^/\t\t/" | cut -c 1-100
+        echo
+        if [ ! -z "$3" ]
+        then
+            exit 1
+        fi
     fi
 }
 
@@ -45,35 +70,20 @@ do
 
     # PHP
     test_php_file_syntax "$file"
-    test_words_existance "$file" var_dump
-    test_words_existance "$file" print_r
-    test_words_existance "$file" error_reporting
-    test_words_existance "$file" debug_backtrace
-    test_words_existance "$file" exit
-    test_words_existance "$file" die
-
-    # Mysql
-    test_words_existance "$file" TRUNCATE
-    test_words_existance "$file" DELETE
+    test_php_psr "$file"
+    test_words_existance "$file" var_dump fatal
+    test_words_existance "$file" print_r fatal
+    test_words_existance "$file" error_reporting fatal
+    test_words_existance "$file" debug_backtrace fatal
 
     # JavaScript
-    test_words_existance "$file" console.log
-    test_words_existance "$file" debugger
+    test_words_existance "$file" console.log fatal
+    test_words_existance "$file" debugger fatal
 
     # Python
-    test_words_existance "$file" set_trace
+    test_words_existance "$file" set_trace fatal
     test_words_existance "$file" print
-    test_words_existance "$file" pprint
-    test_words_existance "$file" __dict__
-
-    # Ruby
-    test_words_existance "$file" abort
-    test_words_existance "$file" debug
-    test_words_existance "$file" inspect
+    test_words_existance "$file" pprint fatal
+    test_words_existance "$file" __dict__ fatal
 
 done < <(git diff --cached --name-status)
-
-# NOTE: Why we are not using `exit 1-255` on error? Well, in practice
-# you would see that it's way too buggy to trust. Way too many times
-# you are forced to use `git commit -n` to run commit without hooks,
-# so errors are just printed out for the user.
