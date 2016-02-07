@@ -24,6 +24,8 @@ This hook is called before commit message construction and it checks for common 
 
 For PHP files it will check syntax error of the file.
 
+For PHP files it will check for newly introduced PSR issues.
+
 For other languages (Python, Ruby, PHP, JavaScript, Mysql) it will check common dangerous words. I still
 adding other languages there to make it better and might rewrite it a bit to make module support. Feel
 free to fork this repo and adding stuff!
