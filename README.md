@@ -4,9 +4,19 @@ Common GIT hooks for better quality assurance for your projects.
 
 # prepare-commit-msg hook
 
-This hook is used to construct commit message for author. If your branch contains some number,
-like feature/5001 or feat-9001 then your commit message will start with ticket number #5001 or #9001.
+This hook is used to construct commit message for author.
 
+If your branch contains some number, like feature/5001 or feat-9001 then your commit message
+will start with ticket number #5001 or #9001.
+
+It will notify you about ticket number requirement, if you have following in your GIT settings:
+
+    [hooks]
+        ticketnumbercheck = on
+
+It will show your branch.
+
+It will show short summary of files which are changed.
 
 # pre-commit hook
 
