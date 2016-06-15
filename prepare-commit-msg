@@ -1,36 +1,39 @@
 #!/bin/bash
 
-echo > "$1"
-
-# Ticket number as first commit entry
-if [ -f /tmp/.git-rejected-commit-msg ]
+if [ -z "$2" ]
 then
-    cat /tmp/.git-rejected-commit-msg | grep -v '^$' | grep -v '^*' > "$1"
-    echo -e "\n" >> "$1"
-else
-    TICKET=$(git symbolic-ref HEAD | sed 's/[^0-9]*//')
-    if [ -n "$TICKET" ]
+    echo > "$1"
+
+    # Ticket number as first commit entry
+    if [ -f /tmp/.git-rejected-commit-msg ]
     then
-        echo "#$TICKET " > "$1"
+        cat /tmp/.git-rejected-commit-msg | grep -v '^$' | grep -v '^*' > "$1"
+        echo -e "\n" >> "$1"
+    else
+        TICKET=$(git symbolic-ref HEAD | sed 's/[^0-9]*//')
+        if [ -n "$TICKET" ]
+        then
+            echo "#$TICKET " > "$1"
+        fi
+        echo -e "\n" >> "$1"
     fi
+
+    if [ "$(git config hooks.ticketnumbercheck)" == "on" ]
+    then
+        python -c "print '*' * 80" >> "$1"
+        echo -e "* Commit without ticket number will be rejected!" >> "$1"
+        python -c "print '*' * 80" >> "$1"
+        echo -e "\n" >> "$1"
+    fi
+
+    python -c "print '*' * 80" >> "$1"
+    echo "* You are on $(git branch | grep '^\*' | awk '{print $2}') branch." >> "$1"
+    python -c "print '*' * 80" >> "$1"
+    echo -e "\n" >> "$1"
+
+    python -c "print '*' * 80" >> "$1"
+    echo -e "* Changed files:" >> "$1"
+    git status --porcelain | sed 's/^/*    /'  >> "$1"
+    python -c "print '*' * 80" >> "$1"
     echo -e "\n" >> "$1"
 fi
-
-if [ "$(git config hooks.ticketnumbercheck)" == "on" ]
-then
-    python -c "print '*' * 80" >> "$1"
-    echo -e "* Commit without ticket number will be rejected!" >> "$1"
-    python -c "print '*' * 80" >> "$1"
-    echo -e "\n" >> "$1"
-fi
-
-python -c "print '*' * 80" >> "$1"
-echo "* You are on $(git branch | grep '^\*' | awk '{print $2}') branch." >> "$1"
-python -c "print '*' * 80" >> "$1"
-echo -e "\n" >> "$1"
-
-python -c "print '*' * 80" >> "$1"
-echo -e "* Changed files:" >> "$1"
-git status --porcelain | sed 's/^/*    /'  >> "$1"
-python -c "print '*' * 80" >> "$1"
-echo -e "\n" >> "$1"
