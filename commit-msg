@@ -1,11 +1,19 @@
 #!/bin/bash
 
-if [ "$(git config hooks.ticketnumbercheck)" == "on" ]
+RED='\033[0;31m'
+NC='\033[0m'
+
+if [ "$(git config hooks.ticketnumbercheck)" != "off" ]
 then
     if head -n 1 "$1" | grep -Pvq "^#[0-9]+"
     then
-        echo >&2 "ERROR: Ticket number is missing in commit message"
-        cp "$1" /tmp/.git-rejected-commit-msg
-        exit 1
+        echo >&2 -e "${RED}NOTE: Ticket number is missing in the commit message.${NC}"
+
+        # if user not enabled this check manually, then show him message how to disable
+        # this maybe annoying check for ticket number
+        if [ "$(git config hooks.ticketnumbercheck)" != "on" ]
+        then
+            echo >&2 -e '(run git `config hooks.ticketnumbercheck off` to disable this check for this repo)'
+        fi
     fi
 fi
