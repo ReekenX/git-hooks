@@ -2,6 +2,30 @@
 
 Common GIT hooks for better quality assurance for your projects.
 
+# Installing
+
+Two couple of ways to do it.
+
+(1) You can put all scripts to /usr/share/git-core/templates/ and then
+it will be available for new repos only. For older repos you will need to
+do `git init`. Problem with that is that after hooks update `git init` won't
+work for existing repos, because git does not override files anymore.
+
+So I suggest poor-man install script defined below.
+
+(2) Poor man install script you can run whatever you want to update git hooks
+for all your repos:
+
+    for folder in $(find ~/Work -maxdepth 3 -type d -name .git); do cp {commit-msg,pre-commit,prepare-commit-msg} $folder/hooks/; chmod +x $folder/hooks/{commit-msg,pre-commit,prepare-commit-msg}; done;
+
+This inline script scans for all repos inside ~/Work folder (this is where you keep
+your code, right?) and for performance reasons it scans only 3 levels inside every folder.
+
+The rest of the part is copying script to every git repo you have and makes it executable.
+
+(3) Automatic install script - ask for it in the issues tracker. If there will be a need
+for that - I think I can make it quickly.
+
 # prepare-commit-msg hook
 
 This hook is used to construct commit message for author.
@@ -34,10 +58,8 @@ free to fork this repo and adding stuff!
 
 This hook is called after commit message is saved.
 
-It checks first line to contain ticket number (format: #12345 SOME TEXT). It will be enabled once you
-enable config for it with `git config hooks.ticketnumbercheck on`.
-
-To deactivate remove hook or set `git config hooks.ticketnumbercheck off`.
+It checks first line to contain ticket number (format: #12345 SOME TEXT). It will be enabled by default,
+but you can always control it using `git config hooks.ticketnumbercheck [on | off]`.
 
 # References
 
