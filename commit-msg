@@ -13,7 +13,7 @@ then
         # this maybe annoying check for ticket number
         if [ "$(git config hooks.ticketnumbercheck)" != "on" ]
         then
-            echo >&2 -e '(run git `config hooks.ticketnumbercheck off` to disable this check for this repo)'
+            echo >&2 -e '(run git `git config hooks.ticketnumbercheck off` to disable this check for this repo)'
         fi
     fi
 fi
