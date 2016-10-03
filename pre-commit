@@ -21,8 +21,8 @@ test_php_psr() {
     if [[ "$1" =~ .(php|inc)$ ]]
     then
         git show HEAD:"$1" > /tmp/.test_file.php
-        errors_before=$(phpcs /tmp/.test_file.php | wc -l)
-        errors_after=$(phpcs "$1" | wc -l)
+        errors_before=$(phpcs /tmp/.test_file.php | egrep ' ERROR| WARNING' | wc -l)
+        errors_after=$(phpcs "$1" | egrep ' ERROR| WARNING' | wc -l)
         if [[ $errors_after -gt $errors_before ]] 
         then
             echo
