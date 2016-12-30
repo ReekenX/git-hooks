@@ -14,8 +14,20 @@ then
         if [ -n "$TICKET" ]
         then
             echo "#$TICKET " > "$1"
+            echo -e "\n" >> "$1"
+        else
+            TICKET=$(git last --author="$(git config user.name)" --oneline | sed 's/.*\#\([0-9]*\).*/\1/')
+            if [ -n "$TICKET" ] && [ "$(git last --author=$(git config user.name | sed 's/^\(.*\) .*$/\1/') --oneline)" != "$TICKET" ]
+            then
+                echo "#$TICKET " > "$1"
+                echo -e "\n" >> "$1"
+                echo "* Previous commits by me:" >> "$1"
+                git log --author="$(git config user.name)" --oneline -n 3 | sed 's/^/*  /' >> "$1"
+                echo -e "\n" >> "$1"
+            else
+                echo -e "\n" >> "$1"
+            fi
         fi
-        echo -e "\n" >> "$1"
     fi
 
     if [ "$(git config hooks.ticketnumbercheck)" == "on" ]
